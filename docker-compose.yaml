@@ -1,0 +1,19 @@
+version: "3.0"
+
+services:
+  postgres:
+    image: sruthicps/postgres:student
+    restart: "always"
+    ports:
+    - 5432:5432
+    environment:
+      POSTGRES_DB: "postgres"
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+  studentapi:
+    image: sruthicps/student-api:latest
+    restart: always
+    depends_on: 
+    - postgres
+    ports:
+    - 8080:8080
