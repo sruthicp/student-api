@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"student-api/db"
 	"student-api/handlers"
 	"time"
 
@@ -14,18 +13,16 @@ import (
 )
 
 func main() {
-	var postgres *db.DBConnection
-	var err error
+	runRestService()
+	rungRPCService()
+}
 
-	postgres, err = db.NewDBConnection()
+func rungRPCService() {
 
-	if err != nil {
-		panic(err)
-	} else if postgres == nil {
-		panic("postgres is nil")
-	}
+}
 
-	shandler := handlers.NewStudent(postgres)
+func runRestService() {
+	shandler := handlers.NewStudent()
 
 	sm := mux.NewRouter()
 	sm.Handle("/students", shandler).Methods("POST")

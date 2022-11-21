@@ -6,20 +6,37 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"strconv"
-
-	"student-api/data"
-	"student-api/db"
+	"student-api/model"
+	"student-api/repositories"
 
 	"github.com/gorilla/mux"
 )
 
+//to be deprecated...
+
+// import (
+// 	"database/sql"
+// 	"encoding/json"
+// 	"io/ioutil"
+// 	"log"
+// 	"net/http"
+// 	"strconv"
+
+// 	"student-api/db"
+// 	"student-api/model"
+// 	"student-api/repositories"
+
+// 	"github.com/gorilla/mux"
+// )
+
 type Student struct {
-	conn *db.DBConnection
+	repo *repositories.StudentRepo
 }
 
-func NewStudent(c *db.DBConnection) *Student {
-	return &Student{c}
+func NewStudent() *Student {
+	return &Student{
+		repo: repositories.NewStudentRepo(),
+	}
 }
 
 func (s *Student) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
@@ -40,15 +57,12 @@ func (s *Student) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Student) getStudent(rw http.ResponseWriter, r *http.Request) {
-	var id int64
+	var id string
 	var err error
 	vars := mux.Vars(r)
-	if id, err = strconv.ParseInt(vars["id"], 10, 64); err != nil {
-		http.Error(rw, "Invalid parameter type", http.StatusBadRequest)
-		return
-	}
+	id = vars["id"]
 	log.Println("id:", id)
-	sd, err := data.GetStudent(s.conn, id)
+	sd, err := s.repo.GetStudent(id)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			http.Error(rw, "Admission number not found", http.StatusNotFound)
@@ -66,7 +80,7 @@ func (s *Student) getStudent(rw http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Student) addStudent(rw http.ResponseWriter, r *http.Request) {
-	var std data.Student
+	std := &model.Student{}
 	var err error
 
 	b, err := ioutil.ReadAll(r.Body)
@@ -82,11 +96,11 @@ func (s *Student) addStudent(rw http.ResponseWriter, r *http.Request) {
 		http.Error(rw, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if std.AdmNo == 0 || std.Name == "" {
+	if std.AdmNo == "" || std.Name == "" {
 		http.Error(rw, "Should provide Admission number and Name", http.StatusBadRequest)
 		return
 	}
-	err = data.AddStudent(s.conn, std)
+	err = s.repo.AddStudent(std)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
@@ -96,14 +110,12 @@ func (s *Student) addStudent(rw http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Student) updateStudent(rw http.ResponseWriter, r *http.Request) {
-	var std data.Student
+	var std model.Student
 	var err error
-	var id int64
+	var id string
 	vars := mux.Vars(r)
-	if id, err = strconv.ParseInt(vars["id"], 10, 64); err != nil {
-		http.Error(rw, "Invalid parameter type", http.StatusBadRequest)
-		return
-	}
+
+	id = vars["id"]
 	log.Println("id:", id)
 
 	b, err := ioutil.ReadAll(r.Body)
@@ -119,7 +131,7 @@ func (s *Student) updateStudent(rw http.ResponseWriter, r *http.Request) {
 		http.Error(rw, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if std.AdmNo != 0 {
+	if std.AdmNo != "" {
 		http.Error(rw, "Admission number cannot be updated", http.StatusBadRequest)
 		return
 	}
@@ -127,7 +139,7 @@ func (s *Student) updateStudent(rw http.ResponseWriter, r *http.Request) {
 		http.Error(rw, "Name cannot be updated", http.StatusBadRequest)
 		return
 	}
-	err = data.UpdateStudent(s.conn, id, std.Address, std.Class, std.Age)
+	err = s.repo.UpdateStudent(id, std.Address, std.Class, std.Age)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
@@ -136,15 +148,13 @@ func (s *Student) updateStudent(rw http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Student) deleteStudent(rw http.ResponseWriter, r *http.Request) {
-	var id int64
+	var id string
 	var err error
 	vars := mux.Vars(r)
-	if id, err = strconv.ParseInt(vars["id"], 10, 64); err != nil {
-		http.Error(rw, "Invalid parameter type", http.StatusBadRequest)
-		return
-	}
+	id = vars["id"]
+
 	log.Println("id:", id)
-	err = data.DeleteStudent(s.conn, id)
+	err = s.repo.DeleteStudent(id)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return

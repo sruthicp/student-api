@@ -23,7 +23,7 @@ func NewDBConnection() (conn *DBConnection, err error) {
 	conn = new(DBConnection)
 	conn.dbType = "postgres"
 	if os.Getenv("DB_HOST") == "" {
-		db_host = "postgres"
+		db_host = "localhost"
 	} else {
 		db_host = os.Getenv("DB_HOST")
 	}
