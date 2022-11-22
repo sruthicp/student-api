@@ -40,8 +40,8 @@ func (ss *StudentService) GetStudent(id string) (res *model.Student, err error) 
 	return res, err
 }
 
-func (ss *StudentService) UpdateStudent(id, address, class string, age int32) (err error) {
-	err = ss.repo.UpdateStudent(id, address, class, age)
+func (ss *StudentService) UpdateStudent(id string, std *model.Student) (err error) {
+	err = ss.repo.UpdateStudent(id, std)
 	if err != nil {
 		log.Println("error updating student: ", err)
 		return err

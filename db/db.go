@@ -1,47 +1,67 @@
 package db
 
 import (
-	"database/sql"
+	"context"
 	"fmt"
-	"os"
+	"log"
+	"student-api/config"
 
-	sqlbuilder "github.com/huandu/go-sqlbuilder" // SQL builder
+	"github.com/go-pg/pg"
 	_ "github.com/lib/pq"
 )
 
-// DBConnection is a holder for a database connection
-type DBConnection struct {
-	dbType  string
-	DB      *sql.DB
-	Builder sqlbuilder.Flavor
-	IDMax   int
+type dbLogger struct{}
+
+func (d dbLogger) BeforeQuery(c *pg.QueryEvent) {
+}
+
+func (d dbLogger) AfterQuery(q *pg.QueryEvent) {
+	fmt.Println("-----------------------------------******-------------------------------------------------------------------------------")
+	fmt.Println(q.FormattedQuery())
+	fmt.Println("-----------------------------------******-------------------------------------------------------------------------------")
 }
 
 // NewDBConnection connects to the DB
-func NewDBConnection() (conn *DBConnection, err error) {
-	var db_host string
-	conn = new(DBConnection)
-	conn.dbType = "postgres"
-	if os.Getenv("DB_HOST") == "" {
-		db_host = "localhost"
-	} else {
-		db_host = os.Getenv("DB_HOST")
-	}
+func NewDBConnection(conf *config.ServiceConfig) (conn *pg.DB, err error) {
+	pgConf := conf.Postgres
+	client := pg.Connect(&pg.Options{
+		User:     "postgres",
+		Password: "postgres",
+		Database: pgConf.DBName,
+		Addr:     fmt.Sprintf("%v:%v", pgConf.Host, pgConf.Port),
+	})
 
-	conn.DB, err = sql.Open("postgres", fmt.Sprintf("postgres://postgres:postgres@%s:5432/postgres?sslmode=disable", db_host))
+	ctx := context.Background()
+
+	_, err = client.ExecContext(ctx, "SELECT 1")
 	if err != nil {
-		return
+		log.Println("did not connect to postgres: ", err)
 	}
-	err = conn.DB.Ping()
-	if err != nil {
-		return
-	}
-	conn.IDMax = 9223372036854775807
 
-	conn.Builder = sqlbuilder.PostgreSQL
-	return
-}
+	client.AddQueryHook(dbLogger{})
+	log.Println("connected to postgres server....................")
 
-func (conn *DBConnection) Close() {
-	conn.DB.Close()
+	return client, err
+
+	// var db_host string
+	// conn = new(DBConnection)
+	// conn.dbType = "postgres"
+	// if os.Getenv("DB_HOST") == "" {
+	// 	db_host = "localhost"
+	// } else {
+	// 	db_host = os.Getenv("DB_HOST")
+	// }
+
+	// conn.DB, err = sql.Open("postgres", fmt.Sprintf("postgres://postgres:postgres@%s:5432/postgres?sslmode=disable", db_host))
+	// if err != nil {
+	// 	return
+	// }
+	// err = conn.DB.Ping()
+	// if err != nil {
+	// 	return
+	// }
+	// conn.IDMax = 9223372036854775807
+
+	// conn.Builder = sqlbuilder.PostgreSQL
+	// return
 }

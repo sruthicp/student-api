@@ -6,11 +6,12 @@ import (
 )
 
 type Student struct {
-	AdmNo   string `json:"admission_no"`
-	Name    string `json:"name"`
-	Address string `json:"address"`
-	Class   string `json:"class"`
-	Age     int32  `json:"age"`
+	tableName struct{} `sql:"student" pg:",discard_unknown_columns"` //nolint
+	AdmNo     string   `sql:"admission_no,pk" json:"admission_no"`
+	Name      string   `sql:"std_name" json:"name"`
+	Address   string   `sql:"std_address" json:"address"`
+	Class     string   `sql:"std_class" json:"class"`
+	Age       int32    `sql:"std_age" json:"age"`
 }
 
 func (sd *Student) ToJSON(w io.Writer) error {

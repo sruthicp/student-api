@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"student-api/config"
+	"student-api/db"
 	"student-api/model"
 	"student-api/repositories"
 
@@ -34,8 +36,11 @@ type Student struct {
 }
 
 func NewStudent() *Student {
+	config.NewServiceConfig()
+	connection, _ := db.NewDBConnection(config.SvcConf)
+
 	return &Student{
-		repo: repositories.NewStudentRepo(),
+		repo: repositories.NewStudentRepo(connection),
 	}
 }
 
@@ -110,7 +115,7 @@ func (s *Student) addStudent(rw http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Student) updateStudent(rw http.ResponseWriter, r *http.Request) {
-	var std model.Student
+	var std *model.Student
 	var err error
 	var id string
 	vars := mux.Vars(r)
@@ -139,7 +144,7 @@ func (s *Student) updateStudent(rw http.ResponseWriter, r *http.Request) {
 		http.Error(rw, "Name cannot be updated", http.StatusBadRequest)
 		return
 	}
-	err = s.repo.UpdateStudent(id, std.Address, std.Class, std.Age)
+	err = s.repo.UpdateStudent(id, std)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return

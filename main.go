@@ -3,21 +3,53 @@ package main
 import (
 	"context"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
+	"student-api/config"
+	"student-api/controller"
+	"student-api/db"
 	"student-api/handlers"
+	"student-api/repositories"
+	"student-api/service"
 	"time"
 
 	"github.com/gorilla/mux"
+	"google.golang.org/grpc"
+
+	pb "student-api/proto/student"
 )
 
 func main() {
-	runRestService()
+	// runRestService()
 	rungRPCService()
 }
 
 func rungRPCService() {
+	svc := grpc.NewServer()
+
+	// initializing service config
+	config.NewServiceConfig()
+
+	// setting up DB connection
+	connection, err := db.NewDBConnection(config.SvcConf)
+	if err != nil {
+		log.Fatal("postgres connection failure.!!", err)
+	}
+
+	sr := repositories.NewStudentRepo(connection)
+	ss := service.NewStudentService(sr)
+	sc := controller.NewStudentController(ss)
+
+	pb.RegisterStudentServer(svc, sc)
+
+	listen, err := net.Listen("tcp", ":8080")
+	if err != nil {
+		log.Fatal("error listening on port", err)
+	}
+
+	svc.Serve(listen)
 
 }
 

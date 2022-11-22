@@ -73,17 +73,16 @@ func (c *studentClient) DeleteStudent(ctx context.Context, in *BaseStudentReques
 }
 
 // StudentServer is the server API for Student service.
-// All implementations must embed UnimplementedStudentServer
+// All implementations should embed UnimplementedStudentServer
 // for forward compatibility
 type StudentServer interface {
 	CreateStudent(context.Context, *CreateStudentRequest) (*CreateStudentResponse, error)
 	GetStudent(context.Context, *BaseStudentRequest) (*GetStudentResponse, error)
 	UpdateStudent(context.Context, *UpdateStudentRequest) (*BaseStudentResponse, error)
 	DeleteStudent(context.Context, *BaseStudentRequest) (*BaseStudentResponse, error)
-	mustEmbedUnimplementedStudentServer()
 }
 
-// UnimplementedStudentServer must be embedded to have forward compatible implementations.
+// UnimplementedStudentServer should be embedded to have forward compatible implementations.
 type UnimplementedStudentServer struct {
 }
 
@@ -99,7 +98,6 @@ func (UnimplementedStudentServer) UpdateStudent(context.Context, *UpdateStudentR
 func (UnimplementedStudentServer) DeleteStudent(context.Context, *BaseStudentRequest) (*BaseStudentResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteStudent not implemented")
 }
-func (UnimplementedStudentServer) mustEmbedUnimplementedStudentServer() {}
 
 // UnsafeStudentServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to StudentServer will

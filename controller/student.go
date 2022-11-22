@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"net/http"
 	"student-api/model"
 	protos "student-api/proto/student"
@@ -17,7 +18,7 @@ func NewStudentController(svc *service.StudentService) *StudentController {
 	}
 }
 
-func (sc *StudentController) CreateStudent(req *protos.CreateStudentRequest) (res *protos.CreateStudentResponse, err error) {
+func (sc *StudentController) CreateStudent(ctx context.Context, req *protos.CreateStudentRequest) (res *protos.CreateStudentResponse, err error) {
 	res = &protos.CreateStudentResponse{
 		Message:    "Successfully added student details",
 		Statuscode: http.StatusOK,
@@ -43,7 +44,7 @@ func (sc *StudentController) CreateStudent(req *protos.CreateStudentRequest) (re
 	return res, nil
 }
 
-func (sc *StudentController) GetStudent(req *protos.BaseStudentRequest) (res *protos.GetStudentResponse, err error) {
+func (sc *StudentController) GetStudent(ctx context.Context, req *protos.BaseStudentRequest) (res *protos.GetStudentResponse, err error) {
 	res = &protos.GetStudentResponse{
 		Message:    "Successfully fetched student details",
 		Statuscode: http.StatusOK,
@@ -63,13 +64,19 @@ func (sc *StudentController) GetStudent(req *protos.BaseStudentRequest) (res *pr
 	return res, nil
 }
 
-func (sc *StudentController) UpdateStudent(req *protos.UpdateStudentRequest) (res *protos.BaseStudentResponse, err error) {
+func (sc *StudentController) UpdateStudent(ctx context.Context, req *protos.UpdateStudentRequest) (res *protos.BaseStudentResponse, err error) {
 	res = &protos.BaseStudentResponse{
 		Message:    "Successfully updated student details",
 		Statuscode: http.StatusOK,
 	}
+	std := &model.Student{
+		Name:    req.Name,
+		Address: req.Address,
+		Class:   req.Class,
+		Age:     req.Age,
+	}
 
-	if err = sc.service.UpdateStudent(req.AdmNo, req.Address, req.Class, req.Age); err != nil {
+	if err = sc.service.UpdateStudent(req.AdmNo, std); err != nil {
 		res.Message = "Failed to update student details"
 		res.Statuscode = http.StatusInternalServerError
 
@@ -79,7 +86,7 @@ func (sc *StudentController) UpdateStudent(req *protos.UpdateStudentRequest) (re
 	return res, nil
 }
 
-func (sc *StudentController) DeleteStudent(req *protos.BaseStudentRequest) (res *protos.BaseStudentResponse, err error) {
+func (sc *StudentController) DeleteStudent(ctx context.Context, req *protos.BaseStudentRequest) (res *protos.BaseStudentResponse, err error) {
 	res = &protos.BaseStudentResponse{
 		Message:    "Successfully deleting student details",
 		Statuscode: http.StatusOK,

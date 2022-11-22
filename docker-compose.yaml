@@ -2,7 +2,7 @@ version: "3.0"
 
 services:
   postgres:
-    image: sruthicps/postgres:student
+    image: sruthicps/postgres:v1
     restart: "always"
     ports:
     - 5432:5432
