@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"student-api/model"
 	protos "student-api/proto/student"
@@ -18,10 +19,10 @@ func NewStudentController(svc *service.StudentService) *StudentController {
 	}
 }
 
-func (sc *StudentController) CreateStudent(ctx context.Context, req *protos.CreateStudentRequest) (res *protos.CreateStudentResponse, err error) {
-	res = &protos.CreateStudentResponse{
+func (sc *StudentController) CreateStudent(ctx context.Context, req *protos.CreateStudentRequest) (*protos.CreateStudentResponse, error) {
+	res := &protos.CreateStudentResponse{
 		Message:    "Successfully added student details",
-		Statuscode: http.StatusOK,
+		StatusCode: http.StatusOK,
 	}
 
 	reqModel := &model.Student{
@@ -33,10 +34,10 @@ func (sc *StudentController) CreateStudent(ctx context.Context, req *protos.Crea
 
 	id, err := sc.service.AddStudent(reqModel)
 	if err != nil {
-		res.Message = "Failed to add student details"
-		res.Statuscode = http.StatusInternalServerError
+		res.Message = err.Msg
+		res.StatusCode = int32(err.Status)
 
-		return res, err
+		return res, errors.New(err.Msg)
 	}
 
 	res.AdmNo = id
@@ -44,19 +45,19 @@ func (sc *StudentController) CreateStudent(ctx context.Context, req *protos.Crea
 	return res, nil
 }
 
-func (sc *StudentController) GetStudent(ctx context.Context, req *protos.BaseStudentRequest) (res *protos.GetStudentResponse, err error) {
-	res = &protos.GetStudentResponse{
+func (sc *StudentController) GetStudent(ctx context.Context, req *protos.BaseStudentRequest) (*protos.GetStudentResponse, error) {
+	res := &protos.GetStudentResponse{
 		Message:    "Successfully fetched student details",
-		Statuscode: http.StatusOK,
+		StatusCode: http.StatusOK,
 	}
 	var details *model.Student
 
-	details, err = sc.service.GetStudent(req.AdmNo)
+	details, err := sc.service.GetStudent(req.AdmNo)
 	if err != nil {
-		res.Message = "Failed to get student details"
-		res.Statuscode = http.StatusInternalServerError
+		res.Message = err.Msg
+		res.StatusCode = int32(err.Status)
 
-		return res, err
+		return res, errors.New(err.Msg)
 	}
 
 	res.Details = modelToProto(details)
@@ -64,10 +65,10 @@ func (sc *StudentController) GetStudent(ctx context.Context, req *protos.BaseStu
 	return res, nil
 }
 
-func (sc *StudentController) UpdateStudent(ctx context.Context, req *protos.UpdateStudentRequest) (res *protos.BaseStudentResponse, err error) {
-	res = &protos.BaseStudentResponse{
+func (sc *StudentController) UpdateStudent(ctx context.Context, req *protos.UpdateStudentRequest) (*protos.BaseStudentResponse, error) {
+	res := &protos.BaseStudentResponse{
 		Message:    "Successfully updated student details",
-		Statuscode: http.StatusOK,
+		StatusCode: http.StatusOK,
 	}
 	std := &model.Student{
 		Name:    req.Name,
@@ -76,27 +77,26 @@ func (sc *StudentController) UpdateStudent(ctx context.Context, req *protos.Upda
 		Age:     req.Age,
 	}
 
-	if err = sc.service.UpdateStudent(req.AdmNo, std); err != nil {
-		res.Message = "Failed to update student details"
-		res.Statuscode = http.StatusInternalServerError
+	if err := sc.service.UpdateStudent(req.AdmNo, std); err != nil {
+		res.Message = err.Msg
+		res.StatusCode = int32(err.Status)
 
-		return res, err
+		return res, errors.New(err.Msg)
 	}
 
 	return res, nil
 }
 
-func (sc *StudentController) DeleteStudent(ctx context.Context, req *protos.BaseStudentRequest) (res *protos.BaseStudentResponse, err error) {
-	res = &protos.BaseStudentResponse{
+func (sc *StudentController) DeleteStudent(ctx context.Context, req *protos.BaseStudentRequest) (*protos.BaseStudentResponse, error) {
+	res := &protos.BaseStudentResponse{
 		Message:    "Successfully deleting student details",
-		Statuscode: http.StatusOK,
+		StatusCode: http.StatusOK,
 	}
 
-	if err = sc.service.DeleteStudent(req.AdmNo); err != nil {
-		res.Message = "Failed to delete student details"
-		res.Statuscode = http.StatusInternalServerError
-
-		return res, err
+	if err := sc.service.DeleteStudent(req.AdmNo); err != nil {
+		res.Message = err.Msg
+		res.StatusCode = int32(err.Status)
+		return res, errors.New(err.Msg)
 	}
 
 	return res, nil

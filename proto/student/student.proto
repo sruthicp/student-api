@@ -1,0 +1,76 @@
+syntax = "proto3";
+
+option go_package = ".;pb";
+
+import "google/api/annotations.proto";
+
+service Student{
+    rpc CreateStudent(CreateStudentRequest) returns (CreateStudentResponse) {
+        option (google.api.http) = {
+            post: "/students"
+            body: "*"
+        };
+    };
+
+    rpc GetStudent(BaseStudentRequest) returns (GetStudentResponse) {
+        option (google.api.http) = {
+            get: "/students/{admNo}"
+        };
+    };
+    rpc UpdateStudent(UpdateStudentRequest) returns (BaseStudentResponse) {
+        option (google.api.http) = {
+            put: "/students/{admNo}"
+            body: "*"
+        };
+    };
+    rpc DeleteStudent(BaseStudentRequest) returns (BaseStudentResponse) {
+        option (google.api.http) = {
+            delete: "/students/{admNo}"
+        };
+    };
+}
+
+message CreateStudentRequest {
+    string admNo = 1 [json_name="admn_no"];
+    string name = 2 [json_name="name"];
+    string address = 3 [json_name="address"];
+    string class = 4 [json_name="class"];
+    int32 age = 5 [json_name="age"];
+}
+
+message CreateStudentResponse {
+    int32 statusCode = 1;
+    string message = 2;
+    string admNo = 3;
+}
+
+message BaseStudentRequest {
+    string admNo = 1 [json_name="admn_no"];
+}
+
+message GetStudentResponse {
+    int32 statusCode = 1;
+    string message = 2;
+    StudentDetails details = 3;
+}
+
+message UpdateStudentRequest {
+    string admNo = 1 [json_name="admn_no"];
+    string name = 2 [json_name="name"];
+    string address = 3 [json_name="address"];
+    string class = 4 [json_name="class"];
+    int32 age = 5 [json_name="age"];
+}
+
+message BaseStudentResponse {
+    int32 statusCode = 1;
+    string message = 2;
+}
+
+message StudentDetails {
+    string admNo = 1;
+    string name = 2;
+    string address = 3;
+    string class = 4;
+    int32 age = 5;
+}

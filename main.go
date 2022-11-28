@@ -5,30 +5,19 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"os"
-	"os/signal"
 	"student-api/config"
 	"student-api/controller"
 	"student-api/db"
-	"student-api/handlers"
 	"student-api/repositories"
 	"student-api/service"
-	"time"
-
-	"github.com/gorilla/mux"
-	"google.golang.org/grpc"
 
 	pb "student-api/proto/student"
+
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"google.golang.org/grpc"
 )
 
 func main() {
-	// runRestService()
-	rungRPCService()
-}
-
-func rungRPCService() {
-	svc := grpc.NewServer()
-
 	// initializing service config
 	config.NewServiceConfig()
 
@@ -42,6 +31,13 @@ func rungRPCService() {
 	ss := service.NewStudentService(sr)
 	sc := controller.NewStudentController(ss)
 
+	go runRestService(sc)
+	rungRPCService(sc)
+}
+
+func rungRPCService(sc pb.StudentServer) {
+	svc := grpc.NewServer()
+
 	pb.RegisterStudentServer(svc, sc)
 
 	listen, err := net.Listen("tcp", ":8080")
@@ -53,33 +49,41 @@ func rungRPCService() {
 
 }
 
-func runRestService() {
-	shandler := handlers.NewStudent()
+func runRestService(sc pb.StudentServer) {
+	mux := runtime.NewServeMux()
 
-	sm := mux.NewRouter()
-	sm.Handle("/students", shandler).Methods("POST")
-	sm.Handle("/students/{id}", shandler).Methods("GET", "PUT", "DELETE")
+	pb.RegisterStudentHandlerServer(context.Background(), mux, sc)
 
-	s := &http.Server{
-		Addr:         "0.0.0.0:8080",
-		Handler:      sm,
-		IdleTimeout:  120 * time.Second,
-		ReadTimeout:  300 * time.Second,
-		WriteTimeout: 300 * time.Second,
+	if err := http.ListenAndServe(":8082", mux); err != nil {
+		log.Fatal(err)
 	}
-	go func() {
-		if err := s.ListenAndServe(); err != nil {
-			log.Fatal(err)
-		}
-	}()
 
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, os.Interrupt)
+	// shandler := handlers.NewStudent()
 
-	out := <-sigChan
-	log.Println("graceful shutdown of service", out)
+	// sm := mux.NewRouter()
+	// sm.Handle("/students", shandler).Methods("POST")
+	// sm.Handle("/students/{id}", shandler).Methods("GET", "PUT", "DELETE")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-	cancel()
-	s.Shutdown(ctx)
+	// s := &http.Server{
+	// 	Addr:         "0.0.0.0:8080",
+	// 	Handler:      sm,
+	// 	IdleTimeout:  120 * time.Second,
+	// 	ReadTimeout:  300 * time.Second,
+	// 	WriteTimeout: 300 * time.Second,
+	// }
+	// go func() {
+	// 	if err := s.ListenAndServe(); err != nil {
+	// 		log.Fatal(err)
+	// 	}
+	// }()
+
+	// sigChan := make(chan os.Signal, 1)
+	// signal.Notify(sigChan, os.Interrupt)
+
+	// out := <-sigChan
+	// log.Println("graceful shutdown of service", out)
+
+	// ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	// cancel()
+	// s.Shutdown(ctx)
 }
